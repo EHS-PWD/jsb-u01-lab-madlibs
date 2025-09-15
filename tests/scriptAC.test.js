@@ -1,0 +1,30 @@
+import fs from 'fs';
+import { JSDOM } from 'jsdom';
+
+const setupDomAndScript = async () => {
+  const html = fs.readFileSync('./student-work/index.html', 'utf8');
+  const dom = new JSDOM(html, { runScripts: 'dangerously', resources: 'usable' });
+
+  global.window = dom.window;
+  global.document = dom.window.document;
+  global.prompt = jest.fn();
+
+  prompt
+    .mockReturnValueOnce('Disney World')
+    .mockReturnValueOnce('dragon')
+    .mockReturnValueOnce('sneezed');
+
+  const scriptCode = fs.readFileSync('./student-work/scripts/scriptAC.js', 'utf8');
+  const scriptEl = dom.window.document.createElement('script');
+  scriptEl.textContent = scriptCode;
+  dom.window.document.body.appendChild(scriptEl);
+
+  await new Promise((res) => setTimeout(res, 100));
+  return dom;
+};
+
+test('scriptAC.js generates the correct Mad Lib', async () => {
+  const dom = await setupDomAndScript();
+  const output = dom.window.document.querySelector('#madLib').innerHTML;
+  expect(output).toMatch(/Disney World.*dragon.*sneezed/);
+});
